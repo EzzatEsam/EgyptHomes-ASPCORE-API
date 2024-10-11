@@ -30,8 +30,16 @@ ImageIOService imageIOService,
     public async Task<IActionResult> Post(PropertyCreateDTO propertyPost)
     {
         var user = await _userManager.GetUserAsync(User);
+        Console.WriteLine("Post property endpoint called by user");
         if (user is null)
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
+
+        if (!user.EmailConfirmed)
+        {
+            Console.WriteLine("Email not confirmed. You need to confirm your email before posting a property");
+            // return Forbid("Email not confirmed. You need to confirm your email before posting a property");
+            return StatusCode(403, "Email not confirmed. You need to confirm your email before posting a property");
+        }
         var property = propertyPost.ToModel();
         if (propertyPost.ContactPhone is null)
         {
@@ -61,7 +69,6 @@ ImageIOService imageIOService,
 
                 if (error is not null)
                 {
-                    Console.WriteLine($"Error: {error.Message}");
                     await _propertyManagementService.DeleteProperty(property.Id);
                     return BadRequest("Failed to upload image");
                 }
@@ -79,7 +86,7 @@ ImageIOService imageIOService,
 
             }
         }
-        return Created();
+        return NoContent();
     }
 
 
@@ -112,7 +119,7 @@ ImageIOService imageIOService,
     {
         var user = await _userManager.GetUserAsync(User);
         if (user is null)
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
         var properties = await _propertyManagementService.GetFavourites(user
         , pageSize: requestDTO.PageSize,
         page: requestDTO.PageNumber
@@ -137,7 +144,7 @@ ImageIOService imageIOService,
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
         {
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
         }
         var error = await _propertyManagementService.AddFavourite(id, user.Id);
         if (error != null)
@@ -154,7 +161,7 @@ ImageIOService imageIOService,
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
         {
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
         }
         var error = await _propertyManagementService.DeleteFavourite(id, user.Id);
         if (error != null)
@@ -185,18 +192,16 @@ ImageIOService imageIOService,
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
         {
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
         }
 
         var property = await _propertyManagementService.GetProperty(id);
 
         if (property is not null)
         {
-            Console.WriteLine($"Deleting property with id: {id}");
             if (property.UserId == user.Id)
             {
                 var error = await _propertyManagementService.DeleteProperty(property.Id);
-                Console.WriteLine($"Error: {error?.Message}");
                 if (error is not null)
                 {
                     return BadRequest(error.Message);
@@ -205,12 +210,12 @@ ImageIOService imageIOService,
             }
             else
             {
-                return Forbid();
+                return Forbid("You are not the owner of this property");
             }
         }
         else
         {
-            return NotFound();
+            return NotFound("Property not found");
         }
 
     }
@@ -221,7 +226,7 @@ ImageIOService imageIOService,
     {
         var user = await _userManager.GetUserAsync(User);
         if (user is null)
-            return Unauthorized();
+            return Unauthorized("User not signed in correctly");
         var property = await _propertyManagementService.GetProperty(id);
 
         if (property is null)
@@ -230,7 +235,7 @@ ImageIOService imageIOService,
         }
         else if (property.UserId != user.Id)
         {
-            return Forbid();
+            return Forbid("You are not the owner of this property");
         }
 
         var updatedProperty = propertyPost.ToModel();

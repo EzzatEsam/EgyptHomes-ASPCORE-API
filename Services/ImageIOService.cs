@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace EgyptHomes.Services;
 public class ImageIOService
 {
-    private readonly int _quality = 85;
+    private readonly int _quality = 75;
     public Error? SaveImage(IFormFile image, Guid guid)
     {
         var path = Path.Combine("wwwroot", "images", guid.ToString() + ".webp");

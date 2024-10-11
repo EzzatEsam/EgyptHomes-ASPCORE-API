@@ -278,7 +278,6 @@ public class PropertyManagementService(ApplicationDbContext dbContext)
 
     public async Task<PaginatedResult<PropertyPost>> Search(PropertySearchDTO searchDTO, string? userId = null)
     {
-        Console.WriteLine(searchDTO.Street);
         var query = _dbContext.Locations
         .Include(l => l.Property)
         .ThenInclude(p => p!.Images)

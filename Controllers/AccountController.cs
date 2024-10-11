@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using EgyptHomes.Auth;
 using EgyptHomes.DTOs;
 using EgyptHomes.Models;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,8 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
             Email = register.Email,
             FirstName = register.FirstName,
             LastName = register.LastName,
-            PhoneNumber = register.PhoneNumber
+            PhoneNumber = register.PhoneNumber,
+
 
         };
 
@@ -45,6 +47,64 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
 
         _logger.LogInformation($"User registered successfully: {register.Email}");
         return NoContent();
+    }
+
+    [HttpPost]
+    [Route("google-signin")]
+    public async Task<ActionResult<LoginTokenDTO>> GoogleSignIn([FromBody] GoogleSignInRequestDTO request)
+    {
+        _logger.LogInformation("Google Signin endpoint called");
+
+        var IdToken = request.IdToken;
+
+        var settings = new GoogleJsonWebSignature.ValidationSettings
+        {
+            Audience = [_configuration["Google:cid"]!],
+            ExpirationTimeClockTolerance = TimeSpan.FromMinutes(1)
+        };
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(IdToken, settings);
+        }
+        catch
+        {
+            return BadRequest("Invalid token");
+        }
+
+
+        var user = await _userManager.FindByEmailAsync(payload.Email);
+
+
+        if (user == null)
+        {
+            user = new User
+            {
+                UserName = payload.Email,
+                Email = payload.Email,
+                FirstName = payload.GivenName,
+                LastName = payload.FamilyName,
+                EmailConfirmed = payload.EmailVerified,
+                Provider = "Google",
+                PictureUrl = payload.Picture
+            };
+            await _userManager.CreateAsync(user);
+        }
+        else if (user.Provider != "Google")
+        {
+            return BadRequest("Email already exists with a different provider");
+        }
+
+        var expiresInMins = int.Parse(_configuration["JwtAuth:expiresInMins"]!);
+        var refreshToken = await GenerateRefreshTokenForUser(user);
+        var accessToken = GenerateJwtForUser(user, expiresInMins);
+        return new LoginTokenDTO
+        {
+            AccessToken = accessToken,
+            User = user.ToDTO(),
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.Now.AddMinutes(expiresInMins)
+        };
     }
 
     [HttpPost]
@@ -70,25 +130,20 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
         }
 
         var expiresInMins = int.Parse(_configuration["JwtAuth:expiresInMins"]!);
-        var jwtSecret = _configuration["JwtAuth:secret"]!;
-        var refreshTokenExpiresDays = double.Parse(_configuration["JwtAuth:refreshTokenExpiresDays"]!);
-        var accessToken = JwtGenerator.GenerateJwt(user, jwtSecret, expiresInMins);
-        var refreshToken = GenerateRandomString(64);
-        _logger.LogDebug("ok 1");
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiry = DateTime.Now.AddDays(refreshTokenExpiresDays).ToUniversalTime();
+        var refreshToken = await GenerateRefreshTokenForUser(user);
+        var accessToken = GenerateJwtForUser(user, expiresInMins);
 
-        await _userManager.UpdateAsync(user);
 
         var token = new LoginTokenDTO
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            User = user.ToDTO(),
             ExpiresAt = DateTime.Now.AddMinutes(expiresInMins)
         };
 
         _logger.LogInformation("User logged in successfully: {Email}", login.Email);
-        return token;
+        return Ok(token);
     }
 
     [HttpPost("refresh")]
@@ -126,12 +181,13 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
         var newAccessToken = JwtGenerator.GenerateJwt(user, jwtSecret, expiresInMins);
 
         _logger.LogInformation("Token refreshed successfully for user: {UserId}", userId);
-        return new LoginTokenDTO
+        return Ok(new LoginTokenDTO
         {
             AccessToken = newAccessToken,
             RefreshToken = refreshToken,
+            User = user.ToDTO(),
             ExpiresAt = DateTime.Now.AddMinutes(expiresInMins)
-        };
+        });
     }
 
     [Authorize]
@@ -192,5 +248,27 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
             }
             return new string(result);
         }
+    }
+
+
+    private string GenerateJwtForUser(User user, int expiresInMins)
+    {
+
+        var jwtSecret = _configuration["JwtAuth:secret"]!;
+
+        var accessToken = JwtGenerator.GenerateJwt(user, jwtSecret, expiresInMins);
+        return accessToken;
+    }
+
+    private async Task<string> GenerateRefreshTokenForUser(User user)
+    {
+        var refreshTokenExpiresDays = double.Parse(_configuration["JwtAuth:refreshTokenExpiresDays"]!);
+        var refreshToken = GenerateRandomString(64);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiry = DateTime.Now.AddDays(refreshTokenExpiresDays).ToUniversalTime();
+
+        await _userManager.UpdateAsync(user);
+        return refreshToken;
+
     }
 }
