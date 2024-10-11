@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EgyptHomes.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240928220945_LolDafaq")]
-    partial class LolDafaq
+    [Migration("20241011065045_FirstAndOnly2")]
+    partial class FirstAndOnly2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,7 +38,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Governorate")
                         .IsRequired()
@@ -57,7 +57,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -65,6 +65,28 @@ namespace EgyptHomes.Migrations
                         .IsUnique();
 
                     b.ToTable("Locations");
+                });
+
+            modelBuilder.Entity("EgyptHomes.Models.PropertyImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long>("PropertyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyId");
+
+                    b.ToTable("PropertyImages");
                 });
 
             modelBuilder.Entity("EgyptHomes.Models.PropertyPost", b =>
@@ -85,23 +107,26 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ContactPhone")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool?>("HasAirConditioning")
+                        .HasColumnType("boolean");
+
                     b.Property<bool?>("HasGarage")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                    b.Property<bool?>("HasGarden")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("HasSwimmingPool")
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("NumberOfBathrooms")
                         .HasColumnType("integer");
@@ -109,18 +134,23 @@ namespace EgyptHomes.Migrations
                     b.Property<int?>("NumberOfBedrooms")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("PropertyType")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<float>("Value")
-                        .HasColumnType("real");
 
                     b.HasKey("Id");
 
@@ -148,6 +178,14 @@ namespace EgyptHomes.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -171,6 +209,19 @@ namespace EgyptHomes.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PictureUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiry")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -191,6 +242,36 @@ namespace EgyptHomes.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("EgyptHomes.Models.UserFavourite", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long>("PropertyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserFavourites");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -336,6 +417,17 @@ namespace EgyptHomes.Migrations
                     b.Navigation("Property");
                 });
 
+            modelBuilder.Entity("EgyptHomes.Models.PropertyImage", b =>
+                {
+                    b.HasOne("EgyptHomes.Models.PropertyPost", "Property")
+                        .WithMany("Images")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
+                });
+
             modelBuilder.Entity("EgyptHomes.Models.PropertyPost", b =>
                 {
                     b.HasOne("EgyptHomes.Models.User", "User")
@@ -343,6 +435,25 @@ namespace EgyptHomes.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EgyptHomes.Models.UserFavourite", b =>
+                {
+                    b.HasOne("EgyptHomes.Models.PropertyPost", "Property")
+                        .WithMany("Favourites")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EgyptHomes.Models.User", "User")
+                        .WithMany("Favourites")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
 
                     b.Navigation("User");
                 });
@@ -400,12 +511,18 @@ namespace EgyptHomes.Migrations
 
             modelBuilder.Entity("EgyptHomes.Models.PropertyPost", b =>
                 {
+                    b.Navigation("Favourites");
+
+                    b.Navigation("Images");
+
                     b.Navigation("Location")
                         .IsRequired();
                 });
 
             modelBuilder.Entity("EgyptHomes.Models.User", b =>
                 {
+                    b.Navigation("Favourites");
+
                     b.Navigation("PostedProperties");
                 });
 #pragma warning restore 612, 618

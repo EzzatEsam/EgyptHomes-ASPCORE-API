@@ -14,6 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 Console.WriteLine("google cid");
 Console.WriteLine(builder.Configuration["Google:cid"]);
+Console.WriteLine("Connection string");
+Console.WriteLine(builder.Configuration["database:default"]);
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 builder.Services.AddControllers().AddJsonOptions(option =>
@@ -24,8 +27,7 @@ builder.Services.AddControllers().AddJsonOptions(option =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql("Host=localhost;Port=5432;Database=EgyptHomesDbLocal;Username=postgres;Password=22;"
-));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(builder.Configuration["database:default"]!));
 builder.Services.AddIdentity<User, IdentityRole>(opts =>
 {
     opts.Password.RequireNonAlphanumeric = false;

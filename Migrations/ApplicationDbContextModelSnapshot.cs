@@ -104,7 +104,6 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ContactPhone")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")

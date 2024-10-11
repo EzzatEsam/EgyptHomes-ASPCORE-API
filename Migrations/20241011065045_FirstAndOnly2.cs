@@ -5,16 +5,16 @@
 namespace EgyptHomes.Migrations
 {
     /// <inheritdoc />
-    public partial class LolDafaq : Migration
+    public partial class FirstAndOnly2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<float>(
-                name: "Value",
+            migrationBuilder.AlterColumn<string>(
+                name: "ContactPhone",
                 table: "Properties",
-                type: "real using \"Value\"::real",
-                nullable: false,
+                type: "text",
+                nullable: true,
                 oldClrType: typeof(string),
                 oldType: "text");
         }
@@ -23,12 +23,14 @@ namespace EgyptHomes.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "Value",
+                name: "ContactPhone",
                 table: "Properties",
                 type: "text",
                 nullable: false,
-                oldClrType: typeof(float),
-                oldType: "real");
+                defaultValue: "",
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
         }
     }
 }

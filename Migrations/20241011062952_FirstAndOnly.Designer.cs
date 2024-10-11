@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EgyptHomes.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241004065905_AddedRfrshTokenToUsr")]
-    partial class AddedRfrshTokenToUsr
+    [Migration("20241011062952_FirstAndOnly")]
+    partial class FirstAndOnly
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,7 +38,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Governorate")
                         .IsRequired()
@@ -57,7 +57,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -74,20 +74,17 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<long>("PropertyId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("PropertyPostId")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PropertyPostId");
+                    b.HasIndex("PropertyId");
 
                     b.ToTable("PropertyImages");
                 });
@@ -114,7 +111,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -150,7 +147,7 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("character varying(300)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -176,7 +173,6 @@ namespace EgyptHomes.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
@@ -214,11 +210,18 @@ namespace EgyptHomes.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PictureUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("RefreshTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -251,13 +254,13 @@ namespace EgyptHomes.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<long>("PropertyId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -417,9 +420,13 @@ namespace EgyptHomes.Migrations
 
             modelBuilder.Entity("EgyptHomes.Models.PropertyImage", b =>
                 {
-                    b.HasOne("EgyptHomes.Models.PropertyPost", null)
+                    b.HasOne("EgyptHomes.Models.PropertyPost", "Property")
                         .WithMany("Images")
-                        .HasForeignKey("PropertyPostId");
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("EgyptHomes.Models.PropertyPost", b =>
@@ -436,7 +443,7 @@ namespace EgyptHomes.Migrations
             modelBuilder.Entity("EgyptHomes.Models.UserFavourite", b =>
                 {
                     b.HasOne("EgyptHomes.Models.PropertyPost", "Property")
-                        .WithMany()
+                        .WithMany("Favourites")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -505,6 +512,8 @@ namespace EgyptHomes.Migrations
 
             modelBuilder.Entity("EgyptHomes.Models.PropertyPost", b =>
                 {
+                    b.Navigation("Favourites");
+
                     b.Navigation("Images");
 
                     b.Navigation("Location")

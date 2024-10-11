@@ -18,7 +18,6 @@ public class PropertyPost : BaseModel
 
     [Required]
     public string? UserId { get; set; }
-    [Required]
     public string? ContactPhone { get; set; }
     public string? ContactEmail { get; set; }
     public PropertyCategory? Category { get; set; }
