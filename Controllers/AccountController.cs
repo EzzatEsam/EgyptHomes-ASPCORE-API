@@ -121,6 +121,12 @@ public class UserAccountController(UserManager<User> userManager, ILogger<UserAc
             return NotFound("User not found");
         }
 
+        if (user.Provider != "EgyptHomes")
+        {
+            _logger.LogWarning("User signed up with Google, please use Google Signin");
+            return BadRequest("User signed up with Google, please use Google Signin");
+        }
+
         var result = await _userManager.CheckPasswordAsync(user, login.Password);
 
         if (!result)
